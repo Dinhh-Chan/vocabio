@@ -21,6 +21,7 @@ const MAPPING = {
   'magnifyingglass': 'search',
   'person.circle.fill': 'account-circle',
   'chevron.left.forwardslash.chevron.right': 'code',
+  'chevron.left': 'chevron-left',
   'chevron.right': 'chevron-right',
   'xmark': 'close',
   'checkmark': 'check',

@@ -77,6 +77,13 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="folder/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="study/flashcard" options={{ headerShown: false }} />
+            <Stack.Screen 
+              name="study-set/settings" 
+              options={{ 
+                headerShown: false,
+                presentation: 'card',
+              }} 
+            />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
           <StatusBar style="auto" hidden={false} translucent={true} backgroundColor="transparent" />
