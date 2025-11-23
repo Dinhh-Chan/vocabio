@@ -28,6 +28,10 @@ const MAPPING = {
   'doc.text.fill': 'description',
   'camera.fill': 'camera-alt',
   'arrow.left': 'arrow-back',
+  'arrow.2.circlepath': 'sync',
+  'questionmark.circle.fill': 'help',
+  'arrow.right.square.fill': 'logout',
+  'flame.fill': 'local-fire-department',
 } as IconMapping;
 
 /**

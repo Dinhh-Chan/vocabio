@@ -37,24 +37,29 @@ const styles = StyleSheet.create({
   default: {
     fontSize: 16,
     lineHeight: 24,
+    fontFamily: 'hurme_no2-webfont, -apple-system, BlinkMacSystemFont, sans-serif',
   },
   defaultSemiBold: {
     fontSize: 16,
     lineHeight: 24,
     fontWeight: '600',
+    fontFamily: 'hurme_no2-webfont, -apple-system, BlinkMacSystemFont, sans-serif',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     lineHeight: 32,
+    fontFamily: 'hurme_no2-webfont, -apple-system, BlinkMacSystemFont, sans-serif',
   },
   subtitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: 'hurme_no2-webfont, -apple-system, BlinkMacSystemFont, sans-serif',
   },
   link: {
     lineHeight: 30,
     fontSize: 16,
     color: '#0a7ea4',
+    fontFamily: 'hurme_no2-webfont, -apple-system, BlinkMacSystemFont, sans-serif',
   },
 });

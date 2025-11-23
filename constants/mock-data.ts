@@ -326,3 +326,14 @@ export const mockFlashcardData = {
   ],
 };
 
+// Mock User Data
+export const mockUser = {
+  _id: 'user1',
+  name: 'Nguyễn Văn A',
+  email: 'nguyenvana@example.com',
+  avatar: 'https://api.example.com/avatar/user1.jpg',
+  phone: '+84987654321',
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-15T10:30:00Z',
+};
+
