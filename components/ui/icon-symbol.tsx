@@ -30,8 +30,11 @@ const MAPPING = {
   'camera.fill': 'camera-alt',
   'arrow.left': 'arrow-back',
   'ellipsis': 'more-vert',
-  'book.fill': 'book',
   'arrow.down': 'arrow-downward',
+  'arrow.2.circlepath': 'sync',
+  'questionmark.circle.fill': 'help',
+  'arrow.right.square.fill': 'logout',
+  'flame.fill': 'local-fire-department',
 } as IconMapping;
 
 /**

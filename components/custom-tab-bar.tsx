@@ -172,14 +172,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 24,
+    borderRadius: 12,
     minWidth: 44,
   },
   tabContentActive: {
     backgroundColor: Colors.dark.navBarActiveBg, // #29335C
+    borderRadius: 12,
   },
   tabContentHover: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)', // Light white overlay on press
+    borderRadius: 12,
   },
   tabLabel: {
     marginTop: 4,

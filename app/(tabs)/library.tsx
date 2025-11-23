@@ -160,7 +160,7 @@ export default function LibraryScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { paddingBottom: tabBarHeight, paddingTop: headerHeight }]}>
+    <ThemedView style={[styles.container, { paddingBottom: tabBarHeight + 10, paddingTop: headerHeight }]}>
       <AppHeader searchPlaceholder="Tìm kiếm..." />
 
       {/* Tab Switcher */}
@@ -222,6 +222,7 @@ export default function LibraryScreen() {
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          scrollIndicatorInsets={{ bottom: tabBarHeight }}
           ListEmptyComponent={
             <ThemedView style={styles.empty}>
               <ThemedText>Chưa có học phần nào</ThemedText>
@@ -238,6 +239,7 @@ export default function LibraryScreen() {
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          scrollIndicatorInsets={{ bottom: tabBarHeight }}
           ListEmptyComponent={
             <ThemedView style={styles.empty}>
               <ThemedText>Chưa có thư mục nào</ThemedText>
