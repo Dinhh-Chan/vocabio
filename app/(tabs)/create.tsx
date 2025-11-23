@@ -1,4 +1,5 @@
 import { AppHeader } from '@/components/app-header';
+import { CreateFolderSheet } from '@/components/create-folder-sheet';
 import { CreateStudySetSheet } from '@/components/create-study-set-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -7,30 +8,97 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useTabBarHeight } from '@/hooks/use-tab-bar-height';
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 export default function CreateScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useTabBarHeight();
   const colorScheme = useColorScheme();
   const [showStudySetSheet, setShowStudySetSheet] = useState(false);
+  const [showFolderSheet, setShowFolderSheet] = useState(false);
+  const [studySetSettings, setStudySetSettings] = useState({
+    showIPA: false,
+    showAudio: false,
+    showExample: false,
+  });
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  // Reload settings when screen is focused (e.g., when coming back from settings screen)
+  useFocusEffect(
+    useCallback(() => {
+      loadSettings();
+    }, [])
+  );
+
+  const loadSettings = async () => {
+    try {
+      const savedSettings = await AsyncStorage.getItem('@study_set_settings');
+      if (savedSettings) {
+        setStudySetSettings(JSON.parse(savedSettings));
+      } else {
+        // Reset to default if no settings found
+        setStudySetSettings({
+          showIPA: false,
+          showAudio: false,
+          showExample: false,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
 
   const handleSaveStudySet = (data: {
     topic: string;
     chapter: string;
     unit: string;
     description?: string;
+    vocabularies?: Array<{ id: string; term: string; definition: string }>;
   }) => {
     // TODO: Save study set data
     console.log('Save study set:', data);
-    // Navigate to study-set/create with data or save directly
-    router.push({
-      pathname: '/study-set/create',
-      params: data,
-    });
+    
+    // Đóng sheet trước
     setShowStudySetSheet(false);
+    
+    // Hiển thị thông báo thành công sau khi đóng sheet
+    setTimeout(() => {
+      Alert.alert(
+        'Thành công',
+        'Tạo học phần thành công'
+      );
+    }, 300);
+    
+    // Navigate to study-set/create with data or save directly
+    // router.push({
+    //   pathname: '/study-set/create',
+    //   params: data as any,
+    // });
+  };
+
+  const handleSaveFolder = (data: {
+    name: string;
+    description?: string;
+  }) => {
+    // TODO: Save folder data
+    console.log('Save folder:', data);
+    
+    // Đóng sheet trước
+    setShowFolderSheet(false);
+    
+    // Hiển thị thông báo thành công sau khi đóng sheet
+    setTimeout(() => {
+      Alert.alert(
+        'Thành công',
+        'Tạo thư mục thành công'
+      );
+    }, 300);
   };
 
   return (
@@ -68,8 +136,7 @@ export default function CreateScreen() {
             { backgroundColor: Colors[colorScheme ?? 'dark'].searchBackground }
           ]}
           onPress={() => {
-            // TODO: Navigate to folder create screen when implemented
-            console.log('Create folder - to be implemented');
+            setShowFolderSheet(true);
           }}
         >
           <View style={styles.menuItemContent}>
@@ -93,6 +160,17 @@ export default function CreateScreen() {
             setShowStudySetSheet(false);
           }}
           onSave={handleSaveStudySet}
+          settings={studySetSettings}
+        />
+      )}
+
+      {showFolderSheet && (
+        <CreateFolderSheet
+          visible={showFolderSheet}
+          onClose={() => {
+            setShowFolderSheet(false);
+          }}
+          onSave={handleSaveFolder}
         />
       )}
     </ThemedView>
