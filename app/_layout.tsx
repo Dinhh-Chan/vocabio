@@ -62,21 +62,64 @@ export default function RootLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack
             screenOptions={{
-              cardStyle: { opacity: 1 },
-              gestureEnabled: false,
+              gestureEnabled: true,
+              gestureDirection: 'vertical',
               transitionSpec: {
-                open: { animation: 'timing', config: { duration: 0 } },
-                close: { animation: 'timing', config: { duration: 0 } },
+                open: {
+                  animation: 'spring',
+                  config: {
+                    stiffness: 500,
+                    damping: 300,
+                    mass: 3,
+                    overshootClamping: false,
+                    restDisplacementThreshold: 0.01,
+                    restSpeedThreshold: 0.01,
+                  },
+                },
+                close: {
+                  animation: 'spring',
+                  config: {
+                    stiffness: 500,
+                    damping: 300,
+                    mass: 3,
+                    overshootClamping: false,
+                    restDisplacementThreshold: 0.01,
+                    restSpeedThreshold: 0.01,
+                  },
+                },
               },
-              cardStyleInterpolator: () => ({
-                cardStyle: { opacity: 1 },
-                overlayStyle: { opacity: 0 },
-              }),
+              cardStyleInterpolator: ({ current, next, layouts }: any) => {
+                return {
+                  cardStyle: {
+                    transform: [
+                      {
+                        translateY: current.progress.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [layouts.screen.height, 0],
+                        }),
+                      },
+                    ],
+                    opacity: current.progress.interpolate({
+                      inputRange: [0, 0.5, 0.9, 1],
+                      outputRange: [0, 0.5, 0.9, 1],
+                    }),
+                  },
+                  overlayStyle: {
+                    opacity: current.progress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 0.5],
+                    }),
+                  },
+                };
+              },
             } as any}>
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="folder/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="study/flashcard" options={{ headerShown: false }} />
+            <Stack.Screen name="study/learn" options={{ headerShown: false }} />
+            <Stack.Screen name="study/test-setup" options={{ headerShown: false }} />
+            <Stack.Screen name="study-set/[id]" options={{ headerShown: false }} />
             <Stack.Screen 
               name="study-set/settings" 
               options={{ 

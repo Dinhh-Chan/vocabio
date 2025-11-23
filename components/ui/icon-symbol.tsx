@@ -29,6 +29,9 @@ const MAPPING = {
   'doc.text.fill': 'description',
   'camera.fill': 'camera-alt',
   'arrow.left': 'arrow-back',
+  'ellipsis': 'more-vert',
+  'book.fill': 'book',
+  'arrow.down': 'arrow-downward',
 } as IconMapping;
 
 /**
