@@ -9,7 +9,7 @@ import { authService } from '@/services/auth.service';
 import { User } from '@/types';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
@@ -50,11 +50,15 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { paddingBottom: tabBarHeight }]}>
+    <ThemedView style={styles.container}>
       <ThemedView style={[styles.header, { paddingTop: insets.top }]}>
         <ThemedText type="title">Cá nhân</ThemedText>
       </ThemedView>
-
+      <ScrollView 
+        style={{ flex: 1 }} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 30 }}
+      >
       {user ? (
         <ThemedView style={styles.profileSection}>
           <View
@@ -224,6 +228,7 @@ export default function ProfileScreen() {
           </Pressable>
         )}
       </ThemedView>
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -232,6 +237,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    paddingBottom: 100
   },
   header: {
     marginBottom: 20,
@@ -271,6 +277,7 @@ const styles = StyleSheet.create({
   },
   menuSection: {
     gap: 12,
+    paddingBottom: 20,
   },
   streakSection: {
     flexDirection: 'row',

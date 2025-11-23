@@ -86,7 +86,7 @@ export default function RootLayout() {
             />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
-          <StatusBar style="auto" hidden={false} translucent={true} backgroundColor="transparent" />
+          <StatusBar style="light" hidden={false} translucent={true} backgroundColor="transparent" />
         </ThemeProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
