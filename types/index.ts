@@ -76,7 +76,10 @@ export interface Folder {
   _id: string;
   user_id: string;
   name: string;
+  description?: string;
   parent_id?: string;
+  cover_image?: string;
+  item_count?: number;
   createdAt: string;
   updatedAt: string;
 }

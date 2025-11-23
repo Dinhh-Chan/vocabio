@@ -5,9 +5,12 @@ import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { enableScreens } from 'react-native-screens';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { authService } from '@/services/auth.service';
+
+enableScreens();
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -57,12 +60,26 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
+          <Stack
+            screenOptions={{
+              cardStyle: { opacity: 1 },
+              gestureEnabled: false,
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 0 } },
+                close: { animation: 'timing', config: { duration: 0 } },
+              },
+              cardStyleInterpolator: () => ({
+                cardStyle: { opacity: 1 },
+                overlayStyle: { opacity: 0 },
+              }),
+            } as any}>
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="folder/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="study/flashcard" options={{ headerShown: false }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style="auto" hidden={false} translucent={true} backgroundColor="transparent" />
         </ThemeProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>

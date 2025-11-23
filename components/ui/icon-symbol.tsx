@@ -27,6 +27,7 @@ const MAPPING = {
   'gearshape.fill': 'settings',
   'doc.text.fill': 'description',
   'camera.fill': 'camera-alt',
+  'arrow.left': 'arrow-back',
 } as IconMapping;
 
 /**
