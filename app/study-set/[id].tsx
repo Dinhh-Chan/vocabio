@@ -49,6 +49,11 @@ const STUDY_MODES: StudyMode[] = [
     name: 'Nối 2 mặt thẻ',
     icon: 'doc.text.fill',
   },
+  {
+    id: 'blast',
+    name: 'Blast',
+    icon: 'flame.fill',
+  },
 ];
 
 export default function StudySetDetailScreen() {
@@ -159,8 +164,24 @@ export default function StudySetDetailScreen() {
         });
         break;
       case 'match':
-        // TODO: Navigate to match game
-        console.log('Match game');
+        const matchCards = mockFlashcardData[studySetId as keyof typeof mockFlashcardData] || [];
+        router.push({
+          pathname: '/study/match',
+          params: {
+            name: studySet.name,
+            cards: JSON.stringify(matchCards),
+          },
+        });
+        break;
+      case 'blast':
+        const blastCards = mockFlashcardData[studySetId as keyof typeof mockFlashcardData] || [];
+        router.push({
+          pathname: '/study/blast',
+          params: {
+            name: studySet.name,
+            cards: JSON.stringify(blastCards),
+          },
+        });
         break;
     }
   };
@@ -176,7 +197,7 @@ export default function StudySetDetailScreen() {
         tension: 10,
         useNativeDriver: true,
       }).start();
-    }, [isFlipped]);
+    }, [isFlipped, flipAnimation]);
 
     const frontInterpolate = flipAnimation.interpolate({
       inputRange: [0, 1],

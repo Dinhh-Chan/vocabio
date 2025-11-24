@@ -26,6 +26,16 @@ const STUDY_MODES: StudyMode[] = [
     name: 'Flashcard',
     icon: 'book.fill',
   },
+  {
+    id: 'match',
+    name: 'Nối 2 mặt thẻ',
+    icon: 'link',
+  },
+  {
+    id: 'blast',
+    name: 'Blast',
+    icon: 'flame.fill',
+  },
 ];
 
 export default function LibraryScreen() {
@@ -280,6 +290,26 @@ export default function LibraryScreen() {
                     const cards = mockFlashcardData[selectedStudySet?._id as keyof typeof mockFlashcardData] || mockFlashcardData['studyset1'];
                     router.push({
                       pathname: '/study/flashcard',
+                      params: { 
+                        studySetId: selectedStudySet?._id,
+                        name: selectedStudySet?.name,
+                        cards: JSON.stringify(cards),
+                      },
+                    });
+                  } else if (mode.id === 'match') {
+                    const cards = mockFlashcardData[selectedStudySet?._id as keyof typeof mockFlashcardData] || mockFlashcardData['studyset1'];
+                    router.push({
+                      pathname: '/study/match',
+                      params: { 
+                        studySetId: selectedStudySet?._id,
+                        name: selectedStudySet?.name,
+                        cards: JSON.stringify(cards),
+                      },
+                    });
+                  } else if (mode.id === 'blast') {
+                    const cards = mockFlashcardData[selectedStudySet?._id as keyof typeof mockFlashcardData] || mockFlashcardData['studyset1'];
+                    router.push({
+                      pathname: '/study/blast',
                       params: { 
                         studySetId: selectedStudySet?._id,
                         name: selectedStudySet?.name,

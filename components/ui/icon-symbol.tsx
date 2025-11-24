@@ -35,6 +35,7 @@ const MAPPING = {
   'questionmark.circle.fill': 'help',
   'arrow.right.square.fill': 'logout',
   'flame.fill': 'local-fire-department',
+  'link': 'link',
 } as IconMapping;
 
 /**

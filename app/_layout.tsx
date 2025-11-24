@@ -117,6 +117,8 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="folder/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="study/flashcard" options={{ headerShown: false }} />
+            <Stack.Screen name="study/match" options={{ headerShown: false }} />
+            <Stack.Screen name="study/blast" options={{ headerShown: false }} />
             <Stack.Screen name="study/learn" options={{ headerShown: false }} />
             <Stack.Screen name="study/test-setup" options={{ headerShown: false }} />
             <Stack.Screen name="study-set/[id]" options={{ headerShown: false }} />
