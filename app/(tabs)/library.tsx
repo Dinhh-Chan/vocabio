@@ -86,7 +86,6 @@ export default function LibraryScreen() {
         styles.item,
         {
           backgroundColor: Colors[colorScheme ?? 'dark'].cardBackground,
-          borderColor: Colors[colorScheme ?? 'dark'].icon,
         },
       ]}
     >
@@ -110,7 +109,6 @@ export default function LibraryScreen() {
         styles.item,
         {
           backgroundColor: Colors[colorScheme ?? 'dark'].cardBackground,
-          borderColor: Colors[colorScheme ?? 'dark'].icon,
         },
       ]}
     >
@@ -297,7 +295,6 @@ export default function LibraryScreen() {
                   styles.studyModeButton,
                   {
                     backgroundColor: Colors[colorScheme ?? 'dark'].cardBackground,
-                    borderColor: Colors[colorScheme ?? 'dark'].icon,
                   },
                 ]}
               >
@@ -354,7 +351,6 @@ const styles = StyleSheet.create({
   item: {
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
     marginBottom: 12,
   },
   description: {
@@ -439,7 +435,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
     marginBottom: 12,
   },
   studyModeIcon: {
