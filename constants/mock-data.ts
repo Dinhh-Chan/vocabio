@@ -324,7 +324,151 @@ export const mockFlashcardData = {
       back: 'Fluent or persuasive in speaking or writing' 
     },
   ],
+  'studyset6': [
+    { 
+      id: 'vocab1', 
+      front: 'Serendipity', 
+      back: 'The occurrence of events by chance in a happy or beneficial way' 
+    },
+    { 
+      id: 'vocab2', 
+      front: 'Ephemeral', 
+      back: 'Lasting for a very short time' 
+    },
+    { 
+      id: 'vocab3', 
+      front: 'Eloquent', 
+      back: 'Fluent or persuasive in speaking or writing' 
+    },
+    { 
+      id: 'vocab4', 
+      front: 'Ubiquitous', 
+      back: 'Present, appearing, or found everywhere' 
+    },
+    { 
+      id: 'vocab5', 
+      front: 'Pragmatic', 
+      back: 'Dealing with things in a realistic and practical way' 
+    },
+    { 
+      id: 'vocab6', 
+      front: 'Melancholy', 
+      back: 'A feeling of pensive sadness, typically with no obvious cause' 
+    },
+  ],
+  'studyset7': [
+    { 
+      id: 'vocab1', 
+      front: 'Serendipity', 
+      back: 'The occurrence of events by chance in a happy or beneficial way' 
+    },
+    { 
+      id: 'vocab2', 
+      front: 'Ephemeral', 
+      back: 'Lasting for a very short time' 
+    },
+    { 
+      id: 'vocab3', 
+      front: 'Eloquent', 
+      back: 'Fluent or persuasive in speaking or writing' 
+    },
+    { 
+      id: 'vocab4', 
+      front: 'Ubiquitous', 
+      back: 'Present, appearing, or found everywhere' 
+    },
+  ],
 };
+
+// Mock data cho học phần đang học (Continue Learning)
+export interface ContinueLearningItem {
+  studySetId: string;
+  name: string;
+  totalCards: number;
+  completedCards: number;
+  progress: number; // 0-100
+  status: 'completed' | 'in_progress';
+  lastStudied?: string;
+}
+
+export const mockContinueLearning: ContinueLearningItem[] = [
+  {
+    studySetId: 'studyset1',
+    name: '4.2',
+    totalCards: 15,
+    completedCards: 15,
+    progress: 100,
+    status: 'completed',
+    lastStudied: '2024-01-20T10:30:00Z',
+  },
+  {
+    studySetId: 'studyset2',
+    name: 'Business English',
+    totalCards: 20,
+    completedCards: 12,
+    progress: 60,
+    status: 'in_progress',
+    lastStudied: '2024-01-20T08:15:00Z',
+  },
+  {
+    studySetId: 'studyset4',
+    name: 'TOEFL Preparation',
+    totalCards: 50,
+    completedCards: 35,
+    progress: 70,
+    status: 'in_progress',
+    lastStudied: '2024-01-19T16:45:00Z',
+  },
+  {
+    studySetId: 'studyset3',
+    name: 'Emotions & Feelings',
+    totalCards: 25,
+    completedCards: 8,
+    progress: 32,
+    status: 'in_progress',
+    lastStudied: '2024-01-18T14:20:00Z',
+  },
+];
+
+// Mock data cho học phần gần đây (Recent)
+export interface RecentStudySet {
+  studySetId: string;
+  name: string;
+  totalCards: number;
+  author: string;
+  lastAccessed: string;
+}
+
+export const mockRecentStudySets: RecentStudySet[] = [
+  {
+    studySetId: 'studyset1',
+    name: '4.2',
+    totalCards: 15,
+    author: 'bạn',
+    lastAccessed: '2024-01-20T10:30:00Z',
+  },
+  {
+    studySetId: 'studyset6',
+    name: 'Thông tin cơ bản về Quizlet',
+    totalCards: 9,
+    author: 'Quizlet',
+    lastAccessed: '2024-01-19T15:20:00Z',
+  },
+  {
+    studySetId: 'studyset7',
+    name: 'Nội dung học tập',
+    totalCards: 12,
+    author: 'bạn',
+    lastAccessed: '2024-01-18T11:10:00Z',
+  },
+  {
+    studySetId: 'studyset2',
+    name: 'Business English',
+    totalCards: 20,
+    author: 'bạn',
+    lastAccessed: '2024-01-17T09:30:00Z',
+  },
+];
 
 // Mock User Data
 export const mockUser = {
