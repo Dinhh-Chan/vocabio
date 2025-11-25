@@ -57,12 +57,14 @@ class ApiService {
         return {
           success: false,
           error: data.error || data.message || 'An error occurred',
+          status: response.status,
         };
       }
 
       return {
         success: true,
         data: data.data || data,
+        status: response.status,
       };
     } catch (error: any) {
       if (error.name === 'AbortError') {

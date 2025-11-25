@@ -3,6 +3,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { srsService } from '@/services/srs.service';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useLayoutEffect, useState } from 'react';
@@ -12,6 +13,7 @@ interface Card {
   id: string;
   front: string;
   back: string;
+  vocabularyId?: string; // ID của vocabulary từ API
 }
 
 // Mock flashcard data
@@ -55,7 +57,13 @@ export default function FlashcardScreen() {
   try {
     const parsed = JSON.parse(cardsJson);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      parsedCards = parsed;
+      // Đảm bảo cards có vocabularyId
+      parsedCards = parsed.map((card: any) => ({
+        id: card.id || card._id || card.vocabularyId,
+        front: card.front || card.word,
+        back: card.back || card.definition,
+        vocabularyId: card.vocabularyId || card._id || card.id,
+      }));
     }
   } catch {
     console.log('Could not parse cards from params, using mock data');
@@ -71,18 +79,47 @@ export default function FlashcardScreen() {
   const [unknownCount, setUnknownCount] = useState(0);
   const [knownCount, setKnownCount] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [reviewing, setReviewing] = useState<string | null>(null); // vocabularyId đang review
 
-  const handleSwipeLeft = (card: Card) => {
+  const handleSwipeLeft = async (card: Card) => {
+    // Swipe left = dont_know
     const newUnknownCount = unknownCount + 1;
     setUnknownCount(newUnknownCount);
     checkCompletion(newUnknownCount, knownCount);
+    
+    // Gọi API nếu có vocabularyId
+    if (card.vocabularyId) {
+      try {
+        setReviewing(card.vocabularyId);
+        await srsService.reviewFlashcard(card.vocabularyId, 'dont_know');
+        console.log('Reviewed flashcard - dont_know:', card.vocabularyId);
+      } catch (error) {
+        console.error('Error reviewing flashcard:', error);
+      } finally {
+        setReviewing(null);
+      }
+    }
     console.log('Swiped left on:', card.front);
   };
 
-  const handleSwipeRight = (card: Card) => {
+  const handleSwipeRight = async (card: Card) => {
+    // Swipe right = know
     const newKnownCount = knownCount + 1;
     setKnownCount(newKnownCount);
     checkCompletion(unknownCount, newKnownCount);
+    
+    // Gọi API nếu có vocabularyId
+    if (card.vocabularyId) {
+      try {
+        setReviewing(card.vocabularyId);
+        await srsService.reviewFlashcard(card.vocabularyId, 'know');
+        console.log('Reviewed flashcard - know:', card.vocabularyId);
+      } catch (error) {
+        console.error('Error reviewing flashcard:', error);
+      } finally {
+        setReviewing(null);
+      }
+    }
     console.log('Swiped right on:', card.front);
   };
 

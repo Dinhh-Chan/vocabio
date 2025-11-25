@@ -5,14 +5,41 @@
 // ============================================
 // User Types
 // ============================================
+export interface AuthInfo {
+  _id: string;
+  ip: string;
+  platform: 'Web' | 'iOS' | 'Android';
+  userAgent: Record<string, any>;
+  origin: string;
+  user: string;
+  userInfo: string;
+  jti: string;
+  exp: number;
+}
+
+export type Gender = 'Male' | 'Female' | 'Other';
+export type SystemRole = 'Admin' | 'User' | 'Moderator';
+
 export interface User {
   _id: string;
+  username: string;
+  password?: string; // Chỉ có khi lấy từ server, không lưu vào client
+  ssoId?: string;
   email: string;
-  name: string;
+  firstname?: string;
+  lastname?: string;
+  fullname?: string;
+  gender?: Gender;
+  dob?: string; // Format: YYYY-MM-DD
+  systemRole?: SystemRole;
+  authList?: AuthInfo[];
+  dataPartitionCode?: string;
+  // Legacy fields for backward compatibility
+  name?: string;
   avatar?: string;
   googleId?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ============================================
@@ -202,6 +229,7 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+  status?: number; // HTTP status code
 }
 
 export interface PaginatedResponse<T> {

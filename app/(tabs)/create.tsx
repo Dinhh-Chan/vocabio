@@ -8,10 +8,11 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useTabBarHeight } from '@/hooks/use-tab-bar-height';
+import { studySetService } from '@/services/study-set.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 
 export default function CreateScreen() {
   const headerHeight = useHeaderHeight();
@@ -19,6 +20,7 @@ export default function CreateScreen() {
   const colorScheme = useColorScheme();
   const [showStudySetSheet, setShowStudySetSheet] = useState(false);
   const [showFolderSheet, setShowFolderSheet] = useState(false);
+  const [savingStudySet, setSavingStudySet] = useState(false);
   const [studySetSettings, setStudySetSettings] = useState({
     showIPA: false,
     showAudio: false,
@@ -54,32 +56,80 @@ export default function CreateScreen() {
     }
   };
 
-  const handleSaveStudySet = (data: {
+  const handleSaveStudySet = async (data: {
     topic: string;
     chapter: string;
     unit: string;
     description?: string;
-    vocabularies?: Array<{ id: string; term: string; definition: string }>;
+    vocabularies?: Array<{
+      id: string;
+      term: string;
+      definition: string;
+      termLanguage?: string;
+      definitionLanguage?: string;
+      ipa?: string;
+      audio?: string;
+      example?: string;
+    }>;
   }) => {
-    // TODO: Save study set data
-    console.log('Save study set:', data);
-    
-    // Đóng sheet trước
-    setShowStudySetSheet(false);
-    
-    // Hiển thị thông báo thành công sau khi đóng sheet
-    setTimeout(() => {
-      Alert.alert(
-        'Thành công',
-        'Tạo học phần thành công'
-      );
-    }, 300);
-    
-    // Navigate to study-set/create with data or save directly
-    // router.push({
-    //   pathname: '/study-set/create',
-    //   params: data as any,
-    // });
+    if (!data.vocabularies || data.vocabularies.length === 0) {
+      Alert.alert('Lỗi', 'Vui lòng thêm ít nhất một từ vựng');
+      return;
+    }
+
+    // Validate vocabularies
+    const invalidVocabs = data.vocabularies.filter(
+      (v) => !v.term.trim() || !v.definition.trim()
+    );
+    if (invalidVocabs.length > 0) {
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ từ và định nghĩa cho tất cả từ vựng');
+      return;
+    }
+
+    try {
+      setSavingStudySet(true);
+
+      // Map vocabularies to API format
+      const vocabularies = data.vocabularies.map((vocab, index) => ({
+        word: vocab.term.trim(),
+        wordLanguage: vocab.termLanguage || 'en',
+        definition: vocab.definition.trim(),
+        definitionLanguage: vocab.definitionLanguage || 'vi',
+        ...(vocab.ipa && vocab.ipa.trim() && { ipa: vocab.ipa.trim() }),
+        ...(vocab.audio && vocab.audio.trim() && { audioUrl: vocab.audio.trim() }),
+        priority: index + 1,
+      }));
+
+      const res = await studySetService.createWithVocabularies({
+        title: data.topic.trim() || 'Học phần mới',
+        description: data.description?.trim(),
+        difficulty: 1, // Default difficulty
+        isPublic: false, // Default to private
+        vocabularies,
+      });
+
+      // Kiểm tra nếu POST trả về status 200 thì hiển thị popup thành công
+      if (res.success && res.status === 200) {
+        // Đóng sheet trước
+        setShowStudySetSheet(false);
+        
+        // Hiển thị popup "Tạo thành công học phần" sau khi đóng sheet
+        setTimeout(() => {
+          Alert.alert(
+            'Thành công',
+            'Tạo thành công học phần',
+            [{ text: 'OK' }]
+          );
+        }, 300);
+      } else {
+        Alert.alert('Lỗi', res.error || 'Không thể tạo học phần');
+      }
+    } catch (error: any) {
+      console.error('Error creating study set:', error);
+      Alert.alert('Lỗi', error.message || 'Đã xảy ra lỗi khi tạo học phần');
+    } finally {
+      setSavingStudySet(false);
+    }
   };
 
   const handleSaveFolder = (data: {
@@ -157,11 +207,22 @@ export default function CreateScreen() {
         <CreateStudySetSheet
           visible={showStudySetSheet}
           onClose={() => {
-            setShowStudySetSheet(false);
+            if (!savingStudySet) {
+              setShowStudySetSheet(false);
+            }
           }}
           onSave={handleSaveStudySet}
           settings={studySetSettings}
         />
+      )}
+
+      {savingStudySet && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors[colorScheme ?? 'dark'].tint} />
+            <ThemedText style={styles.loadingText}>Đang tạo học phần...</ThemedText>
+          </View>
+        </View>
       )}
 
       {showFolderSheet && (
@@ -203,6 +264,28 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 16,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    backgroundColor: Colors.dark.cardBackground,
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    marginTop: 8,
   },
 });
 

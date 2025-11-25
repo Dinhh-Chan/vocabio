@@ -36,6 +36,17 @@ export class SrsService {
     });
   }
 
+  // Review flashcard (for flashcard study mode)
+  async reviewFlashcard(
+    vocabularyId: string,
+    action: 'know' | 'dont_know'
+  ): Promise<ApiResponse<SrsProgress>> {
+    return apiService.post<SrsProgress>('/srs-progress/review-flashcard', {
+      vocabularyId,
+      action,
+    });
+  }
+
   // Get review statistics
   async getStatistics(): Promise<ApiResponse<{
     due_today: number;

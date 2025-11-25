@@ -2,26 +2,156 @@ import { AppHeader } from '@/components/app-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { mockContinueLearning, mockRecentStudySets } from '@/constants/mock-data';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHeaderHeight } from '@/hooks/use-header-height';
 import { useTabBarHeight } from '@/hooks/use-tab-bar-height';
+import { studySetService } from '@/services/study-set.service';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Dimensions, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Dimensions, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HORIZONTAL_PADDING = 20; // Padding từ scrollContent
 const CARD_WIDTH = SCREEN_WIDTH - (HORIZONTAL_PADDING * 2); // Card width với padding
 const CARD_SPACING = 16;
 
+interface RecentStudySetItem {
+  studySetId: string;
+  name: string;
+  totalCards: number;
+  author: string;
+  lastAccessed: string;
+}
+
+interface ContinueLearningItem {
+  studySetId: string;
+  name: string;
+  totalCards: number;
+  completedCards: number;
+  progress: number;
+  status: 'continue' | 'done' | 'not_started';
+  lastStudied?: string;
+  loading?: boolean;
+  vocabularies?: Array<{
+    _id: string;
+    word: string;
+    definition: string;
+  }>;
+}
+
 export default function HomeScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useTabBarHeight();
   const colorScheme = useColorScheme();
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [recentStudySets, setRecentStudySets] = useState<RecentStudySetItem[]>([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
+  const [continueLearning, setContinueLearning] = useState<ContinueLearningItem[]>([]);
+  const [loadingContinue, setLoadingContinue] = useState(true);
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    loadRecentStudySets();
+    loadContinueLearning();
+  }, []);
+
+  const loadRecentStudySets = async () => {
+    try {
+      setLoadingRecent(true);
+      const res = await studySetService.getMany();
+      
+      if (res.success && res.data) {
+        // Map API response to RecentStudySetItem format
+        // API trả về format: { _id, userId, title, description, difficulty, isPublic, createdAt, updatedAt, dataPartitionCode }
+        const mappedData: RecentStudySetItem[] = res.data.map((item: any) => ({
+          studySetId: item._id,
+          name: item.title || item.name || 'Học phần không tên',
+          totalCards: item.vocabulary_ids?.length || 0, // Có thể cần gọi API khác để lấy số lượng
+          author: 'Bạn', // Có thể lấy từ userId nếu cần
+          lastAccessed: item.updatedAt || item.createdAt || new Date().toISOString(),
+        }));
+        setRecentStudySets(mappedData);
+      } else {
+        console.error('Error loading recent study sets:', res.error);
+        // Fallback to empty array on error
+        setRecentStudySets([]);
+      }
+    } catch (error) {
+      console.error('Error loading recent study sets:', error);
+      setRecentStudySets([]);
+    } finally {
+      setLoadingRecent(false);
+    }
+  };
+
+  const loadContinueLearning = async () => {
+    try {
+      setLoadingContinue(true);
+      // Lấy danh sách study sets từ API /study-set/many
+      const res = await studySetService.getMany();
+      
+      if (res.success && res.data && res.data.length > 0) {
+        // Gọi API full-info cho từng study set để lấy status
+        const continueLearningPromises = res.data.slice(0, 5).map(async (studySet: any) => {
+          try {
+            const fullInfoRes = await studySetService.getFullInfo(studySet._id);
+            if (fullInfoRes.success && fullInfoRes.data) {
+              const data = fullInfoRes.data;
+              const totalCards = data.vocabularies?.length || 0;
+              const status = data.status || 'not_started';
+              
+              // Tính progress dựa trên status (có thể cần logic phức tạp hơn)
+              let completedCards = 0;
+              let progress = 0;
+              
+              if (status === 'done') {
+                completedCards = totalCards;
+                progress = 100;
+              } else if (status === 'continue') {
+                // Giả sử đã học 50% nếu đang tiếp tục
+                completedCards = Math.floor(totalCards * 0.5);
+                progress = 50;
+              } else {
+                completedCards = 0;
+                progress = 0;
+              }
+              
+              return {
+                studySetId: data.studySet._id,
+                name: data.studySet.title || 'Học phần không tên',
+                totalCards,
+                completedCards,
+                progress,
+                status: status as 'continue' | 'done' | 'not_started',
+                lastStudied: data.studySet.updatedAt || data.studySet.createdAt,
+                loading: false,
+                vocabularies: data.vocabularies?.map((vocab) => ({
+                  _id: vocab._id,
+                  word: vocab.word,
+                  definition: vocab.definition,
+                })),
+              };
+            }
+          } catch (error) {
+            console.error(`Error loading full info for ${studySet._id}:`, error);
+          }
+          return null;
+        });
+        
+        const results = await Promise.all(continueLearningPromises);
+        const validResults = results.filter((item) => item !== null) as ContinueLearningItem[];
+        setContinueLearning(validResults);
+      } else {
+        setContinueLearning([]);
+      }
+    } catch (error) {
+      console.error('Error loading continue learning:', error);
+      setContinueLearning([]);
+    } finally {
+      setLoadingContinue(false);
+    }
+  };
 
   const handleStartTest = (studySetId: string, name: string) => {
     // Navigate to test setup screen
@@ -45,8 +175,20 @@ export default function HomeScreen() {
     });
   };
 
-  const renderContinueLearningCard = ({ item, index }: { item: typeof mockContinueLearning[0]; index: number }) => {
-    const isCompleted = item.status === 'completed';
+  const renderContinueLearningCard = ({ item, index }: { item: ContinueLearningItem; index: number }) => {
+    const isDone = item.status === 'done';
+    const isContinue = item.status === 'continue';
+    const isNotStarted = item.status === 'not_started';
+    
+    // Xác định text button dựa trên status
+    let buttonText = 'Bắt đầu học';
+    if (isDone) {
+      buttonText = 'Bắt đầu làm bài kiểm tra';
+    } else if (isContinue) {
+      buttonText = 'Tiếp tục học';
+    } else if (isNotStarted) {
+      buttonText = 'Bắt đầu học';
+    }
     
     return (
       <View style={[styles.continueCard, { width: CARD_WIDTH }]}>
@@ -70,7 +212,7 @@ export default function HomeScreen() {
                 styles.progressBar,
                 {
                   width: `${item.progress}%`,
-                  backgroundColor: isCompleted ? '#34C759' : '#4255FF',
+                  backgroundColor: isDone ? '#34C759' : '#4255FF',
                 },
               ]}
             />
@@ -80,41 +222,49 @@ export default function HomeScreen() {
         {/* Status Text */}
         <View style={styles.statusContainer}>
           <ThemedText style={styles.statusText}>
-            {isCompleted ? 'Đã hoàn thành tất cả các câu hỏi' : `${item.completedCards}/${item.totalCards} thẻ đã học`}
+            {isDone ? 'Đã hoàn thành tất cả các câu hỏi' : `${item.completedCards}/${item.totalCards} thẻ đã học`}
           </ThemedText>
-          {isCompleted && <ThemedText style={styles.emoji}>🎉</ThemedText>}
+          {isDone && <ThemedText style={styles.emoji}>🎉</ThemedText>}
         </View>
 
-        {/* Start Test Button */}
+        {/* Action Button */}
         <Pressable
           style={[
             styles.startButton,
             { backgroundColor: Colors[colorScheme ?? 'dark'].tint },
           ]}
           onPress={() => {
-            if (isCompleted) {
+            if (isDone) {
               handleStartTest(item.studySetId, item.name);
             } else {
-              // Navigate to learn screen
+              // Navigate to flashcard screen với cards từ vocabularies
+              const cards = item.vocabularies?.map((vocab) => ({
+                id: vocab._id,
+                front: vocab.word,
+                back: vocab.definition,
+                vocabularyId: vocab._id,
+              })) || [];
+              
               router.push({
-                pathname: '/study/learn',
+                pathname: '/study/flashcard',
                 params: {
                   name: item.name,
                   studySetId: item.studySetId,
+                  cards: JSON.stringify(cards),
                 },
               });
             }
           }}
         >
           <ThemedText style={styles.startButtonText}>
-            {isCompleted ? 'Bắt đầu bài kiểm tra' : 'Tiếp tục học'}
+            {buttonText}
           </ThemedText>
         </Pressable>
       </View>
     );
   };
 
-  const renderRecentItem = ({ item }: { item: typeof mockRecentStudySets[0] }) => {
+  const renderRecentItem = ({ item }: { item: RecentStudySetItem }) => {
     return (
       <Pressable
         style={[
@@ -171,52 +321,65 @@ export default function HomeScreen() {
             Học tiếp
           </ThemedText>
           
-          <FlatList
-            ref={flatListRef}
-            data={mockContinueLearning}
-            renderItem={renderContinueLearningCard}
-            keyExtractor={(item) => item.studySetId}
-            horizontal
-            pagingEnabled={false}
-            snapToInterval={CARD_WIDTH + CARD_SPACING}
-            snapToAlignment="start"
-            decelerationRate="fast"
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.continueListContent}
-            onScroll={(event) => {
-              const offset = event.nativeEvent.contentOffset.x;
-              const index = Math.round(offset / (CARD_WIDTH + CARD_SPACING));
-              const newIndex = Math.max(0, Math.min(index, mockContinueLearning.length - 1));
-              if (newIndex !== currentCardIndex) {
-                setCurrentCardIndex(newIndex);
-              }
-            }}
-            scrollEventThrottle={16}
-            onMomentumScrollEnd={(event) => {
-              const offset = event.nativeEvent.contentOffset.x;
-              const index = Math.round(offset / (CARD_WIDTH + CARD_SPACING));
-              const newIndex = Math.max(0, Math.min(index, mockContinueLearning.length - 1));
-              setCurrentCardIndex(newIndex);
-            }}
-          />
-
-          {/* Pagination Dots */}
-          <View style={styles.paginationContainer}>
-            {mockContinueLearning.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.paginationDot,
-                  {
-                    backgroundColor:
-                      index === currentCardIndex
-                        ? Colors[colorScheme ?? 'dark'].text
-                        : Colors[colorScheme ?? 'dark'].searchBackground,
-                  },
-                ]}
+          {loadingContinue ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={Colors[colorScheme ?? 'dark'].tint} />
+              <ThemedText style={styles.loadingText}>Đang tải...</ThemedText>
+            </View>
+          ) : continueLearning.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <ThemedText style={styles.emptyText}>Chưa có học phần nào đang học</ThemedText>
+            </View>
+          ) : (
+            <>
+              <FlatList
+                ref={flatListRef}
+                data={continueLearning}
+                renderItem={renderContinueLearningCard}
+                keyExtractor={(item) => item.studySetId}
+                horizontal
+                pagingEnabled={false}
+                snapToInterval={CARD_WIDTH + CARD_SPACING}
+                snapToAlignment="start"
+                decelerationRate="fast"
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.continueListContent}
+                onScroll={(event) => {
+                  const offset = event.nativeEvent.contentOffset.x;
+                  const index = Math.round(offset / (CARD_WIDTH + CARD_SPACING));
+                  const newIndex = Math.max(0, Math.min(index, continueLearning.length - 1));
+                  if (newIndex !== currentCardIndex) {
+                    setCurrentCardIndex(newIndex);
+                  }
+                }}
+                scrollEventThrottle={16}
+                onMomentumScrollEnd={(event) => {
+                  const offset = event.nativeEvent.contentOffset.x;
+                  const index = Math.round(offset / (CARD_WIDTH + CARD_SPACING));
+                  const newIndex = Math.max(0, Math.min(index, continueLearning.length - 1));
+                  setCurrentCardIndex(newIndex);
+                }}
               />
-            ))}
-          </View>
+
+              {/* Pagination Dots */}
+              <View style={styles.paginationContainer}>
+                {continueLearning.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.paginationDot,
+                      {
+                        backgroundColor:
+                          index === currentCardIndex
+                            ? Colors[colorScheme ?? 'dark'].text
+                            : Colors[colorScheme ?? 'dark'].searchBackground,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            </>
+          )}
         </View>
 
         {/* Gần đây Section */}
@@ -225,13 +388,24 @@ export default function HomeScreen() {
             Gần đây
           </ThemedText>
           
-          <View style={styles.recentList}>
-            {mockRecentStudySets.map((item) => (
-              <View key={item.studySetId}>
-                {renderRecentItem({ item })}
-              </View>
-            ))}
-          </View>
+          {loadingRecent ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={Colors[colorScheme ?? 'dark'].tint} />
+              <ThemedText style={styles.loadingText}>Đang tải...</ThemedText>
+            </View>
+          ) : recentStudySets.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <ThemedText style={styles.emptyText}>Chưa có học phần nào gần đây</ThemedText>
+            </View>
+          ) : (
+            <View style={styles.recentList}>
+              {recentStudySets.map((item) => (
+                <View key={item.studySetId}>
+                  {renderRecentItem({ item })}
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </ThemedView>
@@ -362,5 +536,24 @@ const styles = StyleSheet.create({
   },
   recentItemRight: {
     marginLeft: 8,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    opacity: 0.7,
   },
 });

@@ -2,7 +2,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
@@ -31,7 +31,7 @@ interface VocabularyItem {
 interface CreateStudySetSheetProps {
   visible: boolean;
   onClose: () => void;
-  onSave?: (data: { topic: string; chapter: string; unit: string; description?: string; vocabularies?: VocabularyItem[] }) => void;
+  onSave?: (data: { topic: string; chapter: string; unit: string; description?: string; vocabularies?: VocabularyItem[] }) => void | Promise<void>;
   settings?: {
     showIPA?: boolean;
     showAudio?: boolean;
@@ -56,6 +56,7 @@ export function CreateStudySetSheet({ visible, onClose, onSave, settings = {} }:
     vocabId: string;
     type: 'term' | 'definition';
   } | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Mock folders data
   const mockFolders = [
@@ -183,7 +184,7 @@ export function CreateStudySetSheet({ visible, onClose, onSave, settings = {} }:
       }
     })
     .onEnd((event) => {
-      if (event.translationY > 150) {
+      if (event.translationY > 150 && !saving) {
         onClose();
       } else {
         translateY.value = withSpring(0, {
@@ -201,24 +202,48 @@ export function CreateStudySetSheet({ visible, onClose, onSave, settings = {} }:
     opacity: opacity.value,
   }));
 
-  const handleSave = () => {
-    console.log('handleSave called', { name, nameTrimmed: name.trim() });
+  const handleSave = async () => {
+    if (saving) return;
     
-    // Gọi onSave callback trước (trước khi đóng sheet)
-    if (onSave) {
-      console.log('Calling onSave with data');
-      onSave({
-        topic: name.trim() || 'Học phần mới', // Default name nếu để trống
-        chapter: '',
-        unit: '',
-        description: showDescription ? description.trim() : undefined,
-        vocabularies: vocabularies.filter(v => v.term.trim() || v.definition.trim()),
-      });
+    console.log('handleSave called - Gọi API POST để tạo học phần', { name, nameTrimmed: name.trim() });
+    
+    // Validate tên học phần
+    if (!name.trim()) {
+      // Có thể hiển thị error message
+      return;
     }
+    
+    // Validate vocabularies
+    const validVocabularies = vocabularies.filter(v => v.term.trim() && v.definition.trim());
+    if (validVocabularies.length === 0) {
+      // Có thể hiển thị error message
+      return;
+    }
+    
+    try {
+      setSaving(true);
+      
+      // Gọi onSave callback - callback này sẽ gọi API POST /study-set/with-vocabularies
+      if (onSave) {
+        console.log('Calling onSave - sẽ gọi API POST /study-set/with-vocabularies');
+        await onSave({
+          topic: name.trim(),
+          chapter: '',
+          unit: '',
+          description: showDescription ? description.trim() : undefined,
+          vocabularies: validVocabularies,
+        });
+      }
 
-    // Đóng bottom sheet sau khi đã gọi onSave
-    console.log('Closing sheet');
-    onClose();
+      // Đóng bottom sheet sau khi đã gọi API POST thành công
+      console.log('API POST thành công, đóng sheet');
+      onClose();
+    } catch (error) {
+      console.error('Error saving study set:', error);
+      // Error đã được xử lý trong onSave, không cần đóng sheet
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -231,7 +256,15 @@ export function CreateStudySetSheet({ visible, onClose, onSave, settings = {} }:
     >
       <View style={styles.container}>
         <Animated.View style={[styles.backdrop, backdropStyle]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+          <Pressable 
+            style={StyleSheet.absoluteFill} 
+            onPress={() => {
+              if (!saving) {
+                onClose();
+              }
+            }}
+            disabled={saving}
+          />
         </Animated.View>
 
         <GestureDetector gesture={panGesture}>
@@ -248,7 +281,15 @@ export function CreateStudySetSheet({ visible, onClose, onSave, settings = {} }:
           >
             {/* Header */}
             <View style={styles.header}>
-              <Pressable onPress={onClose} style={styles.headerButton}>
+              <Pressable 
+                onPress={() => {
+                  if (!saving) {
+                    onClose();
+                  }
+                }} 
+                style={styles.headerButton}
+                disabled={saving}
+              >
                 <IconSymbol
                   name="xmark"
                   size={24}
@@ -263,12 +304,15 @@ export function CreateStudySetSheet({ visible, onClose, onSave, settings = {} }:
               <View style={styles.headerRight}>
                 <Pressable 
                   onPress={() => {
-                    onClose();
-                    setTimeout(() => {
-                      router.push('/study-set/settings');
-                    }, 300);
+                    if (!saving) {
+                      onClose();
+                      setTimeout(() => {
+                        router.push('/study-set/settings');
+                      }, 300);
+                    }
                   }} 
                   style={styles.headerButton}
+                  disabled={saving}
                 >
                   <IconSymbol
                     name="gearshape.fill"
@@ -281,13 +325,18 @@ export function CreateStudySetSheet({ visible, onClose, onSave, settings = {} }:
                     console.log('Checkmark button pressed');
                     handleSave();
                   }} 
-                  style={styles.headerButton}
+                  style={[styles.headerButton, saving && styles.headerButtonDisabled]}
+                  disabled={saving}
                 >
-                  <IconSymbol
-                    name="checkmark"
-                    size={24}
-                    color={Colors[colorScheme ?? 'dark'].tint}
-                  />
+                  {saving ? (
+                    <ActivityIndicator size="small" color={Colors[colorScheme ?? 'dark'].tint} />
+                  ) : (
+                    <IconSymbol
+                      name="checkmark"
+                      size={24}
+                      color={Colors[colorScheme ?? 'dark'].tint}
+                    />
+                  )}
                 </Pressable>
               </View>
             </View>
@@ -814,6 +863,9 @@ const styles = StyleSheet.create({
     minWidth: 40,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerButtonDisabled: {
+    opacity: 0.5,
   },
   headerTitle: {
     fontSize: 18,

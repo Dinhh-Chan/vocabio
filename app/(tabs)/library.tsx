@@ -26,6 +26,16 @@ const STUDY_MODES: StudyMode[] = [
     name: 'Flashcard',
     icon: 'book.fill',
   },
+  {
+    id: 'match',
+    name: 'Nối 2 mặt thẻ',
+    icon: 'link',
+  },
+  {
+    id: 'blast',
+    name: 'Blast',
+    icon: 'flame.fill',
+  },
 ];
 
 export default function LibraryScreen() {
@@ -86,7 +96,6 @@ export default function LibraryScreen() {
         styles.item,
         {
           backgroundColor: Colors[colorScheme ?? 'dark'].cardBackground,
-          borderColor: Colors[colorScheme ?? 'dark'].icon,
         },
       ]}
     >
@@ -110,7 +119,6 @@ export default function LibraryScreen() {
         styles.item,
         {
           backgroundColor: Colors[colorScheme ?? 'dark'].cardBackground,
-          borderColor: Colors[colorScheme ?? 'dark'].icon,
         },
       ]}
     >
@@ -288,6 +296,26 @@ export default function LibraryScreen() {
                         cards: JSON.stringify(cards),
                       },
                     });
+                  } else if (mode.id === 'match') {
+                    const cards = mockFlashcardData[selectedStudySet?._id as keyof typeof mockFlashcardData] || mockFlashcardData['studyset1'];
+                    router.push({
+                      pathname: '/study/match',
+                      params: { 
+                        studySetId: selectedStudySet?._id,
+                        name: selectedStudySet?.name,
+                        cards: JSON.stringify(cards),
+                      },
+                    });
+                  } else if (mode.id === 'blast') {
+                    const cards = mockFlashcardData[selectedStudySet?._id as keyof typeof mockFlashcardData] || mockFlashcardData['studyset1'];
+                    router.push({
+                      pathname: '/study/blast',
+                      params: { 
+                        studySetId: selectedStudySet?._id,
+                        name: selectedStudySet?.name,
+                        cards: JSON.stringify(cards),
+                      },
+                    });
                   } else if (mode.id === 'stack-card') {
                     // TODO: Implement stack card
                     console.log('Stack card not implemented yet');
@@ -297,7 +325,6 @@ export default function LibraryScreen() {
                   styles.studyModeButton,
                   {
                     backgroundColor: Colors[colorScheme ?? 'dark'].cardBackground,
-                    borderColor: Colors[colorScheme ?? 'dark'].icon,
                   },
                 ]}
               >
@@ -354,7 +381,6 @@ const styles = StyleSheet.create({
   item: {
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
     marginBottom: 12,
   },
   description: {
@@ -439,7 +465,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
     marginBottom: 12,
   },
   studyModeIcon: {

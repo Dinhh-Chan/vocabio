@@ -22,7 +22,7 @@ export class AuthService {
   private static instance: AuthService;
   private currentUser: User | null = null;
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -44,7 +44,7 @@ export class AuthService {
   async login(username: string, password: string): Promise<ApiResponse<LoginResponse>> {
     try {
       const platform = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : 'Web';
-      
+
       const res = await apiService.post<LoginResponse>('/auth/login', {
         platform,
         username,
@@ -71,14 +71,19 @@ export class AuthService {
     }
   }
 
-  async fetchUserInfo(): Promise<void> {
+  async fetchUserInfo(): Promise<ApiResponse<User>> {
     try {
-      const res = await apiService.get<User>('/auth/me');
+      const res = await apiService.get<User>('/user/me');
       if (res.success && res.data) {
         await this.setUser(res.data);
       }
-    } catch (error) {
+      return res;
+    } catch (error: any) {
       console.error('Error fetching user info:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch user info',
+      };
     }
   }
 
@@ -87,7 +92,7 @@ export class AuthService {
       // TODO: Implement Google OAuth flow
       // Sử dụng expo-auth-session để xử lý OAuth
       // Sau khi có access token, gửi lên backend để verify và lấy user data
-      
+
       // Placeholder - cần implement thực tế
       return {
         success: false,

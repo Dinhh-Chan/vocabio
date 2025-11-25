@@ -1,15 +1,14 @@
-import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import React, { useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, {
-    Easing,
-    Extrapolate,
-    interpolate,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
+  Easing,
+  Extrapolate,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
@@ -39,8 +38,9 @@ export function StackCardView({ cards, onSwipeLeft, onSwipeRight }: StackCardVie
   const textOpacity = useSharedValue(1);
 
   const isDark = colorScheme === 'dark';
-  const backgroundColor = isDark ? "#2E3856" : "#ffffff";
-  const textColor = isDark ? Colors.dark.text : Colors.light.text;
+  // Màu xanh đậm cho card (giống Quizlet)
+  const backgroundColor = "#2E3856";
+  const textColor = "#FFFFFF"; // Màu trắng cho text trên nền xanh đậm
 
   const onGestureEvent = (event: any) => {
     translateX.value = event.nativeEvent.translationX;

@@ -222,6 +222,72 @@ export default function FolderDetailScreen() {
                 <ThemedText type="defaultSemiBold">Flashcard</ThemedText>
               </View>
             </Pressable>
+            <Pressable
+              onPress={() => {
+                setShowStudyModeModal(false);
+                if (selectedStudySet) {
+                  const cards = mockFlashcardData[selectedStudySet._id as keyof typeof mockFlashcardData] || mockFlashcardData['studyset1'];
+                  router.push({
+                    pathname: '/study/match',
+                    params: {
+                      studySetId: selectedStudySet._id,
+                      name: selectedStudySet.name,
+                      cards: JSON.stringify(cards),
+                    },
+                  });
+                }
+              }}
+              style={[
+                styles.studyModeButton,
+                {
+                  backgroundColor: Colors[colorScheme ?? 'dark'].cardBackground,
+                  borderColor: Colors[colorScheme ?? 'dark'].icon,
+                },
+              ]}
+            >
+              <IconSymbol
+                name="link"
+                size={28}
+                color={Colors[colorScheme ?? 'dark'].text}
+                style={styles.studyModeIcon}
+              />
+              <View style={{ flex: 1 }}>
+                <ThemedText type="defaultSemiBold">Nối 2 mặt thẻ</ThemedText>
+              </View>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setShowStudyModeModal(false);
+                if (selectedStudySet) {
+                  const cards = mockFlashcardData[selectedStudySet._id as keyof typeof mockFlashcardData] || mockFlashcardData['studyset1'];
+                  router.push({
+                    pathname: '/study/blast',
+                    params: {
+                      studySetId: selectedStudySet._id,
+                      name: selectedStudySet.name,
+                      cards: JSON.stringify(cards),
+                    },
+                  });
+                }
+              }}
+              style={[
+                styles.studyModeButton,
+                {
+                  backgroundColor: Colors[colorScheme ?? 'dark'].cardBackground,
+                  borderColor: Colors[colorScheme ?? 'dark'].icon,
+                },
+              ]}
+            >
+              <IconSymbol
+                name="flame.fill"
+                size={28}
+                color={Colors[colorScheme ?? 'dark'].text}
+                style={styles.studyModeIcon}
+              />
+              <View style={{ flex: 1 }}>
+                <ThemedText type="defaultSemiBold">Blast</ThemedText>
+              </View>
+            </Pressable>
           </ThemedView>
         </View>
       </Modal>

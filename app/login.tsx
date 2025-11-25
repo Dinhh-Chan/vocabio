@@ -4,8 +4,8 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { authService } from '@/services/auth.service';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Dimensions, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -14,42 +14,34 @@ export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
-
-  // Tự động điền admin/admin khi component mount
-  useEffect(() => {
-    setUsername('admin');
-    setPassword('admin');
-  }, []);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    // Reset error
+    setError(null);
+
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
+      setError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
       return;
     }
 
     try {
       setLoading(true);
-      
-      // Tạm thời bypass authentication cho admin/admin
-      if (username.trim() === 'admin' && password === 'admin') {
-        // Tạo fake token để bypass
-        const fakeToken = 'temp_admin_token_' + Date.now();
-        await authService.setAuthToken(fakeToken);
-        router.replace('/(tabs)');
-        return;
-      }
 
       const res = await authService.login(username.trim(), password);
-      
+
       if (res.success && res.data) {
         router.replace('/(tabs)');
       } else {
-        Alert.alert('Đăng nhập thất bại', res.error || 'Tên đăng nhập hoặc mật khẩu không đúng');
+        // Hiển thị thông báo lỗi cụ thể
+        const errorMessage = res.error || 'Tên đăng nhập hoặc mật khẩu không đúng';
+        setError(errorMessage);
       }
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Đã xảy ra lỗi khi đăng nhập');
+      const errorMessage = error.message || 'Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -57,14 +49,14 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <ThemedView style={styles.content}>
-          <ThemedText 
-            type="title" 
+          <ThemedText
+            type="title"
             style={[
               styles.title,
               { fontSize: Math.min(48, SCREEN_WIDTH * 0.12) }
@@ -77,60 +69,77 @@ export default function LoginScreen() {
             Học từ vựng thông minh với SRS
           </ThemedText>
 
-        <ThemedView style={styles.form}>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: Colors[colorScheme ?? 'dark'].searchBackground,
-                color: Colors[colorScheme ?? 'dark'].text,
-              },
-            ]}
-            placeholder="Tên đăng nhập"
-            placeholderTextColor={Colors[colorScheme ?? 'dark'].icon}
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!loading}
-          />
+          <ThemedView style={styles.form}>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: Colors[colorScheme ?? 'dark'].searchBackground,
+                  color: Colors[colorScheme ?? 'dark'].text,
+                },
+                error && styles.inputError,
+              ]}
+              placeholder="Tên đăng nhập"
+              placeholderTextColor={Colors[colorScheme ?? 'dark'].icon}
+              value={username}
+              onChangeText={(text) => {
+                setUsername(text);
+                // Clear error when user starts typing
+                if (error) setError(null);
+              }}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading}
+            />
 
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: Colors[colorScheme ?? 'dark'].searchBackground,
-                color: Colors[colorScheme ?? 'dark'].text,
-              },
-            ]}
-            placeholder="Mật khẩu"
-            placeholderTextColor={Colors[colorScheme ?? 'dark'].icon}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!loading}
-          />
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: Colors[colorScheme ?? 'dark'].searchBackground,
+                  color: Colors[colorScheme ?? 'dark'].text,
+                },
+                error && styles.inputError,
+              ]}
+              placeholder="Mật khẩu"
+              placeholderTextColor={Colors[colorScheme ?? 'dark'].icon}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                // Clear error when user starts typing
+                if (error) setError(null);
+              }}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading}
+            />
 
-          <Pressable
-            style={[
-              styles.loginButton,
-              {
-                backgroundColor: Colors[colorScheme ?? 'dark'].tint,
-              },
-              loading && styles.buttonDisabled,
-            ]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <ThemedText style={styles.buttonText}>Đăng nhập</ThemedText>
+            {/* Error Message */}
+            {error && (
+              <View style={styles.errorContainer}>
+                <ThemedText style={styles.errorText}>{error}</ThemedText>
+              </View>
             )}
-          </Pressable>
-        </ThemedView>
+
+            <Pressable
+              style={[
+                styles.loginButton,
+                {
+                  backgroundColor: Colors[colorScheme ?? 'dark'].tint,
+                },
+                loading && styles.buttonDisabled,
+              ]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <ThemedText style={styles.buttonText}>Đăng nhập</ThemedText>
+              )}
+            </Pressable>
+          </ThemedView>
 
           <ThemedText style={styles.footer}>
             Bằng cách đăng nhập, bạn đồng ý với Điều khoản sử dụng và Chính sách bảo mật
@@ -181,6 +190,23 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     fontSize: 16,
     minHeight: 50,
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+  },
+  errorContainer: {
+    width: '100%',
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    textAlign: 'center',
   },
   loginButton: {
     width: '100%',

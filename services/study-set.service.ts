@@ -91,6 +91,60 @@ export class StudySetService {
   }>> {
     return apiService.get(`/study-sets/${studySetId}/progress`);
   }
+
+  // Create study set with vocabularies
+  async createWithVocabularies(data: {
+    title: string;
+    description?: string;
+    difficulty?: number;
+    isPublic?: boolean;
+    vocabularies: Array<{
+      word: string;
+      wordLanguage: string;
+      definition: string;
+      definitionLanguage: string;
+      ipa?: string;
+      audioUrl?: string;
+      priority?: number;
+    }>;
+  }): Promise<ApiResponse<StudySet>> {
+    return apiService.post<StudySet>('/study-set/with-vocabularies', data);
+  }
+
+  // Get many study sets (for recent section)
+  async getMany(): Promise<ApiResponse<StudySet[]>> {
+    return apiService.get<StudySet[]>('/study-set/many');
+  }
+
+  // Get study set full info with vocabularies
+  async getFullInfo(studySetId: string): Promise<ApiResponse<{
+    studySet: {
+      _id: string;
+      userId: string;
+      title: string;
+      description?: string;
+      difficulty: number;
+      isPublic: boolean;
+      createdAt: string;
+      updatedAt: string;
+      dataPartitionCode?: string;
+    };
+    vocabularies: Array<{
+      _id: string;
+      userId?: string;
+      word: string;
+      wordLanguage: string;
+      definition: string;
+      definitionLanguage: string;
+      ipa?: string;
+      audioUrl?: string;
+      priority: number;
+      [key: string]: any;
+    }>;
+    status?: 'continue' | 'done' | 'not_started'; // Status cho phần "Học tiếp"
+  }>> {
+    return apiService.get(`/study-set/${studySetId}/full-info`);
+  }
 }
 
 export const studySetService = new StudySetService();

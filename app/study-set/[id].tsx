@@ -1,13 +1,12 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { mockFlashcardData, mockStudySets } from '@/constants/mock-data';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { StudySet } from '@/types';
+import { studySetService } from '@/services/study-set.service';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Dimensions, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -67,42 +66,69 @@ export default function StudySetDetailScreen() {
   const params = useLocalSearchParams();
   const studySetId = (params.id as string) || params.studySetId as string || 'studyset1';
 
-  const [studySet, setStudySet] = useState<StudySet | null>(null);
+  const [studySet, setStudySet] = useState<{
+    _id: string;
+    name: string;
+    description?: string;
+    difficulty?: number;
+  } | null>(null);
   const [terms, setTerms] = useState<Term[]>([]);
+  const [vocabularies, setVocabularies] = useState<Array<{
+    _id: string;
+    word: string;
+    definition: string;
+    wordLanguage: string;
+    definitionLanguage: string;
+    ipa?: string;
+    audioUrl?: string;
+    priority: number;
+  }>>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     loadStudySet();
   }, [studySetId]);
 
-  const loadStudySet = () => {
-    // Tìm study set
-    const found = mockStudySets.find((s) => s._id === studySetId);
-    setStudySet(found || mockStudySets[0]);
+  const loadStudySet = async () => {
+    try {
+      setLoading(true);
+      const res = await studySetService.getFullInfo(studySetId);
+      
+      if (res.success && res.data) {
+        // Map study set data
+        const studySetData = res.data.studySet;
+        setStudySet({
+          _id: studySetData._id,
+          name: studySetData.title || 'Học phần không tên',
+          description: studySetData.description,
+          difficulty: studySetData.difficulty,
+        });
 
-    // Tạo terms từ flashcard data
-    const cards = mockFlashcardData[studySetId as keyof typeof mockFlashcardData] || 
-                  mockFlashcardData['studyset6'] || [];
-    
-    const generatedTerms: Term[] = cards.map((card) => ({
-      id: card.id,
-      term: card.front,
-      definition: card.back,
-    }));
-
-    // Nếu không có cards, tạo mock data
-    if (generatedTerms.length === 0) {
-      setTerms([
-        { id: '1', term: 'Học phần', definition: 'Trên Quizlet, nội dung học được phân bổ thành nhiều học phần với các thuật ngữ và định nghĩa. Bạn có thể tạo học phần của riêng mình hoặc tìm học phần có sẵn.' },
-        { id: '2', term: 'Học phần sơ đồ', definition: 'Học phần sơ đồ cho phép bạn gắn thuật ngữ với các phần của một hình ảnh. Đây là cách lý tưởng để học giải phẫu, địa lý và nhiều nội dung khác.' },
-        { id: '3', term: 'Thẻ ghi nhớ (hoạt động học)', definition: 'Thẻ ghi nhớ là một trong những cách học hiệu quả nhất để ghi nhớ thông tin.' },
-        { id: '4', term: 'Thuật ngữ', definition: 'Một từ hoặc cụm từ được sử dụng trong một lĩnh vực cụ thể.' },
-        { id: '5', term: 'Định nghĩa', definition: 'Giải thích ý nghĩa của một từ hoặc cụm từ.' },
-      ]);
-    } else {
-      setTerms(generatedTerms);
+        // Map vocabularies to terms
+        const mappedTerms: Term[] = res.data.vocabularies.map((vocab) => ({
+          id: vocab._id,
+          term: vocab.word,
+          definition: vocab.definition,
+        }));
+        
+        setTerms(mappedTerms);
+        // Lưu vocabularies để sử dụng trong handleStudyMode
+        setVocabularies(res.data.vocabularies);
+      } else {
+        console.error('Error loading study set:', res.error);
+        // Fallback to empty state
+        setStudySet(null);
+        setTerms([]);
+      }
+    } catch (error) {
+      console.error('Error loading study set:', error);
+      setStudySet(null);
+      setTerms([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -139,9 +165,16 @@ export default function StudySetDetailScreen() {
   const handleStudyMode = (modeId: string) => {
     if (!studySet) return;
 
+    // Map vocabularies to card format for games
+    const cards = vocabularies.map((vocab) => ({
+      id: vocab._id,
+      front: vocab.word,
+      back: vocab.definition,
+      vocabularyId: vocab._id, // Thêm vocabularyId để gọi API
+    }));
+
     switch (modeId) {
       case 'flashcard':
-        const cards = mockFlashcardData[studySetId as keyof typeof mockFlashcardData] || [];
         router.push({
           pathname: '/study/flashcard',
           params: {
@@ -169,12 +202,22 @@ export default function StudySetDetailScreen() {
         });
         break;
       case 'match':
-        // TODO: Navigate to match game
-        console.log('Match game');
+        router.push({
+          pathname: '/study/match',
+          params: {
+            name: studySet.name,
+            cards: JSON.stringify(cards),
+          },
+        });
         break;
       case 'blast':
-        // TODO: Navigate to blast game
-        console.log('Blast game');
+        router.push({
+          pathname: '/study/blast',
+          params: {
+            name: studySet.name,
+            cards: JSON.stringify(cards),
+          },
+        });
         break;
       case 'gravity':
         // TODO: Navigate to gravity game
@@ -194,7 +237,7 @@ export default function StudySetDetailScreen() {
         tension: 10,
         useNativeDriver: true,
       }).start();
-    }, [isFlipped]);
+    }, [isFlipped, flipAnimation]);
 
     const frontInterpolate = flipAnimation.interpolate({
       inputRange: [0, 1],
@@ -305,10 +348,19 @@ export default function StudySetDetailScreen() {
     return <TermCard item={item} />;
   };
 
+  if (loading) {
+    return (
+      <ThemedView style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={Colors[colorScheme ?? 'dark'].tint} />
+        <ThemedText style={styles.loadingText}>Đang tải...</ThemedText>
+      </ThemedView>
+    );
+  }
+
   if (!studySet) {
     return (
       <ThemedView style={styles.container}>
-        <ThemedText>Đang tải...</ThemedText>
+        <ThemedText>Không tìm thấy học phần</ThemedText>
       </ThemedView>
     );
   }
@@ -431,7 +483,7 @@ export default function StudySetDetailScreen() {
               <View style={[styles.authorIcon, { backgroundColor: Colors[colorScheme ?? 'dark'].tint }]}>
                 <ThemedText style={styles.authorIconText}>Q</ThemedText>
               </View>
-              <ThemedText style={styles.infoText}>Quizlet</ThemedText>
+              <ThemedText style={styles.infoText}>Bạn</ThemedText>
               <IconSymbol
                 name="checkmark"
                 size={16}
@@ -714,6 +766,16 @@ const styles = StyleSheet.create({
   },
   termIconButton: {
     padding: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    opacity: 0.7,
   },
 });
 

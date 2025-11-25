@@ -3,10 +3,12 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { MD3DarkTheme, MD3LightTheme, Provider as PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 
+import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { authService } from '@/services/auth.service';
 
@@ -25,17 +27,27 @@ function useProtectedRoute() {
     const checkAuth = async () => {
       try {
         const isAuthenticated = await authService.isAuthenticated();
-        const inAuthGroup = segments[0] === '(tabs)';
+        const currentRoute = segments[0];
+        const isLoginRoute = currentRoute === 'login';
 
-        if (!isAuthenticated && inAuthGroup) {
-          // Redirect to login if not authenticated
-          router.replace('/login');
-        } else if (isAuthenticated && segments[0] === 'login') {
-          // Redirect to tabs if already authenticated
-          router.replace('/(tabs)');
+        if (!isAuthenticated) {
+          // Nếu chưa đăng nhập và không phải route login, redirect về login
+          if (!isLoginRoute) {
+            router.replace('/login');
+          }
+        } else {
+          // Nếu đã đăng nhập và đang ở trang login, redirect về trang chủ
+          if (isLoginRoute) {
+            router.replace('/(tabs)');
+          }
+          // Nếu đã đăng nhập nhưng chưa có route (app khởi động), điều hướng về trang chủ
+          else if (!currentRoute) {
+            router.replace('/(tabs)');
+          }
         }
       } catch (error) {
         console.error('Auth check error:', error);
+        // Nếu có lỗi, redirect về login để đảm bảo an toàn
         router.replace('/login');
       } finally {
         setIsReady(true);
@@ -43,7 +55,7 @@ function useProtectedRoute() {
     };
 
     checkAuth();
-  }, [segments]);
+  }, [segments, router]);
 
   return isReady;
 }
@@ -56,11 +68,35 @@ export default function RootLayout() {
     return null; // Or a loading screen
   }
 
+  // Tạo Material UI theme tùy chỉnh
+  const paperTheme = colorScheme === 'dark' 
+    ? {
+        ...MD3DarkTheme,
+        colors: {
+          ...MD3DarkTheme.colors,
+          primary: Colors.dark.tint,
+          background: Colors.dark.background,
+          surface: Colors.dark.cardBackground,
+          text: Colors.dark.text,
+        },
+      }
+    : {
+        ...MD3LightTheme,
+        colors: {
+          ...MD3LightTheme.colors,
+          primary: Colors.light.tint,
+          background: Colors.light.background,
+          surface: Colors.light.cardBackground,
+          text: Colors.light.text,
+        },
+      };
+
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack
+        <PaperProvider theme={paperTheme}>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Stack
             screenOptions={{
               gestureEnabled: true,
               gestureDirection: 'vertical',
@@ -117,6 +153,8 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="folder/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="study/flashcard" options={{ headerShown: false }} />
+            <Stack.Screen name="study/match" options={{ headerShown: false }} />
+            <Stack.Screen name="study/blast" options={{ headerShown: false }} />
             <Stack.Screen name="study/learn" options={{ headerShown: false }} />
             <Stack.Screen name="study/test-setup" options={{ headerShown: false }} />
             <Stack.Screen name="study-set/[id]" options={{ headerShown: false }} />
@@ -130,7 +168,8 @@ export default function RootLayout() {
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
           <StatusBar style="light" hidden={false} translucent={true} backgroundColor="transparent" />
-        </ThemeProvider>
+          </ThemeProvider>
+        </PaperProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );
