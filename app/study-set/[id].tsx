@@ -49,6 +49,16 @@ const STUDY_MODES: StudyMode[] = [
     name: 'Nối 2 mặt thẻ',
     icon: 'doc.text.fill',
   },
+  {
+    id: 'blast',
+    name: 'Blast',
+    icon: 'flame.fill',
+  },
+  {
+    id: 'gravity',
+    name: 'Khối hộp',
+    icon: 'gearshape.fill',
+  },
 ];
 
 export default function StudySetDetailScreen() {
@@ -161,6 +171,14 @@ export default function StudySetDetailScreen() {
       case 'match':
         // TODO: Navigate to match game
         console.log('Match game');
+        break;
+      case 'blast':
+        // TODO: Navigate to blast game
+        console.log('Blast game');
+        break;
+      case 'gravity':
+        // TODO: Navigate to gravity game
+        console.log('Khối hộp game');
         break;
     }
   };
