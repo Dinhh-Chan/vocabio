@@ -44,6 +44,8 @@ export default function BlastScreen() {
   const [gameOver, setGameOver] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [feedbackBubble, setFeedbackBubble] = useState<{ id: string; isCorrect: boolean } | null>(null);
+  const [laserAnimation, setLaserAnimation] = useState<{ targetX: number; targetY: number } | null>(null);
+  const [stoppedBubbleId, setStoppedBubbleId] = useState<string | null>(null);
 
   // Initialize cards
   useEffect(() => {
@@ -72,6 +74,17 @@ export default function BlastScreen() {
     const floatInterval = setInterval(() => {
       setBubbles((prevBubbles) => {
         const updated = prevBubbles.map((bubble) => {
+          // Stop moving if this bubble is stopped or has feedback
+          if (bubble.id === stoppedBubbleId || feedbackBubble?.id === bubble.id) {
+            return {
+              ...bubble,
+              vx: 0,
+              vy: 0,
+              offsetY: 0,
+              offsetX: 0,
+            };
+          }
+
           let newX = bubble.x + bubble.vx;
           let newY = bubble.y + bubble.vy;
           let newVx = bubble.vx;
@@ -142,7 +155,7 @@ export default function BlastScreen() {
       });
     }, 30);
     return () => clearInterval(floatInterval);
-  }, []);
+  }, [stoppedBubbleId, feedbackBubble?.id]);
 
   const generateBubbles = (cardsList: Card[]) => {
     if (cardsList.length === 0) return;
@@ -205,15 +218,26 @@ export default function BlastScreen() {
   };
 
   const handleBubblePress = (bubble: Bubble) => {
+    // Trigger laser animation
+    setLaserAnimation({ targetX: bubble.x, targetY: bubble.y });
+    
+    // Clear laser after animation
+    setTimeout(() => {
+      setLaserAnimation(null);
+    }, 300);
+
     setFeedbackBubble({ id: bubble.id, isCorrect: bubble.isCorrect });
 
     if (bubble.isCorrect) {
+      // Stop the bubble from moving for correct answer
+      setStoppedBubbleId(bubble.id);
       setScore((prev) => prev + 100);
       setCorrectCount((prev) => prev + 1);
 
       // Move to next question after a short delay
       setTimeout(() => {
         setFeedbackBubble(null);
+        setStoppedBubbleId(null);
         const nextIndex = cards.findIndex((c) => c.id === currentQuestion?.id) + 1;
         if (nextIndex < cards.length) {
           setCurrentQuestion(cards[nextIndex]);
@@ -226,6 +250,23 @@ export default function BlastScreen() {
     } else {
       setScore((prev) => Math.max(0, prev - 20));
       setWrongCount((prev) => prev + 1);
+      
+      // Give the bubble a random push velocity
+      const pushAngle = Math.random() * Math.PI * 2;
+      const pushSpeed = 1 + Math.random() * 1.5;
+      
+      setBubbles((prevBubbles) =>
+        prevBubbles.map((b) =>
+          b.id === bubble.id
+            ? {
+                ...b,
+                vx: Math.cos(pushAngle) * pushSpeed,
+                vy: Math.sin(pushAngle) * pushSpeed,
+              }
+            : b
+        )
+      );
+      
       // Keep bubble on screen, just reset feedback after delay
       setTimeout(() => {
         setFeedbackBubble(null);
@@ -321,6 +362,48 @@ export default function BlastScreen() {
               </Pressable>
             );
           })}
+
+          {/* Cannon */}
+          <View
+            style={[
+              styles.cannon,
+              {
+                left: screenWidth / 2 - 45,
+                top: screenHeight * 0.75 - 45,
+                backgroundColor: Colors[colorScheme ?? 'dark'].cardBackground,
+                borderColor: Colors[colorScheme ?? 'dark'].text,
+              },
+            ]}
+          >
+            <View style={styles.cannonInner} />
+          </View>
+
+          {/* Laser */}
+          {laserAnimation && (
+            <View
+              style={[
+                styles.laser,
+                {
+                  left: screenWidth / 2,
+                  top: screenHeight * 0.75,
+                  width: Math.sqrt(
+                    Math.pow(laserAnimation.targetX - screenWidth / 2, 2) +
+                    Math.pow(laserAnimation.targetY - screenHeight * 0.75, 2)
+                  ),
+                  transform: [
+                    {
+                      rotate: `${Math.atan2(
+                        laserAnimation.targetY - screenHeight * 0.75,
+                        laserAnimation.targetX - screenWidth / 2
+                      ) * (180 / Math.PI)}deg`,
+                    },
+                  ],
+                  backgroundColor: '#FFD60A',
+                  opacity: 0.8,
+                },
+              ]}
+            />
+          )}
         </View>
       )}
 
@@ -466,7 +549,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'stretch',
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 36,
     paddingBottom: 20,
   },
   completionContent: {
@@ -540,5 +623,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  cannon: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    zIndex: 100,
+  },
+  cannonInner: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFD60A',
+  },
+  laser: {
+    position: 'absolute',
+    height: 30,
+    borderRadius: 5,
+    transformOrigin: '0% 50%',
+    zIndex: 99,
   },
 });
